@@ -1,23 +1,31 @@
-import asyncio
 
+import socket, threading
+import sys
 
-HOST = 'localhost'
-PORT = 9095
+def send(uname):
+    while True:
+        msg = input('\nI said: ')
+        if msg == "exit":
+            cli_sock.close()
+            sys.exit()
+            data = uname + ' has left'
+        else:
+            data = uname + ' said: ' + msg
+            cli_sock.send(data.encode())
 
+def receive():
+    while True:
+        data = cli_sock.recv(1024)
+        print('\t'+ str(data.decode()))
 
-async def tcp_echo_client(host, port):
-    reader, writer = await asyncio.open_connection(host, port)
-    message = 'Hello, world'
-
-    writer.write(message.encode())
-    await writer.drain()
-
-    data = await reader.read(100)
-    writer.close()
-    # await writer.wait_closed()
-
-# asyncio.run(tcp_echo_client(HOST, PORT))
-
-loop = asyncio.get_event_loop()
-task = loop.create_task(tcp_echo_client(HOST, PORT))
-loop.run_until_complete(task)
+if __name__ == "__main__":   
+    cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    HOST = 'localhost'
+    PORT = 8888
+    uname = input('Enter your name to enter the chat > ')
+    cli_sock.connect((HOST, PORT))     
+    print('Connected to remote host...')
+    thread_send = threading.Thread(target = send,args=[uname])
+    thread_send.start()
+    thread_receive = threading.Thread(target = receive)
+    thread_receive.start()
